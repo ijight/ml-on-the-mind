@@ -1,0 +1,20 @@
+[project]
+name = "ml-on-the-mind"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "ijight", email = "ianjarrattknight@gmail.com"},
+]
+dependencies = [
+    "marqo==3.11.0",
+    "pandas==2.2.3",
+    "streamlit==1.43.0",
+    "dandi==0.67.0",
+    "tqdm",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.pdm]
+distribution = false

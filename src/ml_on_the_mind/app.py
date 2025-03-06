@@ -2,6 +2,8 @@ import streamlit as st
 import marqo
 from collections import defaultdict
 import traceback
+from data.data_schema import DatasetMetadata
+from data.utils import load_datasets
 
 def format_size(size_in_bytes):
     # Convert bytes to human readable format (B, KB, MB, GB, TB, PB)
@@ -111,8 +113,10 @@ def get_all_filter_options():
     }
 
 def main():
-    st.title("OpenNeuro Dataset Search")
-    st.write("Search through neuroscience datasets from OpenNeuro using natural language")
+    st.title("Neuroscience Dataset Search")
+    mq = marqo.Client(url='http://localhost:8882')
+    index_stats = mq.index("neuroscience_datasets").get_stats()
+    st.markdown(f"Search a list of :blue[**{index_stats['numberOfDocuments']}**] neuroscience datasets from OpenNeuro, DANDI, and more using natural language.")
     
     # Search interface
     col1, col2 = st.columns([3, 1])
