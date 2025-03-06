@@ -9,7 +9,7 @@ ENV PDM_USE_VENV=false
 ENV PDM_IGNORE_SAVED_PYTHON=1
 
 # Install dependencies
-RUN pdm install --no-self
+RUN pdm install --no-self -v
 
 # Download datasets and build vector DB
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
