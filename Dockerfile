@@ -4,8 +4,8 @@ FROM python:3.9-slim
 # Install PDM
 RUN pip install pdm
 
-# Initialize PDM and install dependencies
-RUN pdm init -n && pdm install
+# Install dependencies
+RUN pdm install --no-self
 
 # Download datasets and build vector DB
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
