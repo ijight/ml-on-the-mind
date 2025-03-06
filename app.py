@@ -1,9 +1,10 @@
 import streamlit as st
 import marqo
 from collections import defaultdict
+import traceback
 
 def format_size(size_in_bytes):
-    """Convert bytes to human readable format"""
+    # Convert bytes to human readable format (B, KB, MB, GB, TB, PB)
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size_in_bytes < 1024:
             return f"{size_in_bytes:.1f} {unit}"
@@ -11,51 +12,34 @@ def format_size(size_in_bytes):
     return f"{size_in_bytes:.1f} PB"
 
 def get_unique_field_values(mq, index_name, field, limit=1000):
-    """Get unique values for a field from the index"""
+    # Get unique values for a given field from the index
     results = mq.index(index_name).search(
-        "*",  # Search all documents
+        "*",
         limit=limit,
-        searchable_attributes=["searchable_content"],  # Search in the combined field
+        searchable_attributes=["searchable_content"],
         show_highlights=False,
-        attributes_to_retrieve=[field]  # Only retrieve the field we want
+        attributes_to_retrieve=[field]
     )
     
-    # Extract unique values
     values = set()
     for hit in results['hits']:
-        field_value = hit.get(field, '')
-        if field_value and field_value != 'Field not specified':
-            if ',' in field_value:
-                # Split comma-separated values and add each
-                values.update(v.strip() for v in field_value.split(','))
-            else:
-                values.add(field_value)
+        field_value = hit.get(field, [])
+        
+        if isinstance(field_value, list):
+            for value in field_value:
+                if value and value != "Not specified":
+                    values.add(value)
+        elif field_value and field_value != "Not specified":
+            values.add(field_value)
     
     return sorted(list(values))
-
-@st.cache_data(ttl=3600)  # Cache for 1 hour
-def load_filter_options():
-    """Load all filter options from the index"""
-    mq = marqo.Client(url='http://localhost:8882')
-    
-    try:
-        return {
-            'modalities': get_unique_field_values(mq, "openneuro_datasets", "modalities"),
-            'species': get_unique_field_values(mq, "openneuro_datasets", "species"),
-            'tasks': get_unique_field_values(mq, "openneuro_datasets", "tasks")
-        }
-    except Exception as e:
-        st.error(f"Error loading filter options: {str(e)}")
-        return defaultdict(list)
 
 def search_datasets(query, filters=None, limit=10):
     mq = marqo.Client(url='http://localhost:8882')
     
-    # Build filter conditions
     filter_conditions = []
     if filters:
         if filters.get('modality'):
-            # Filter for array field
             filter_conditions.append(f"modalities:{filters['modality']}")
         if filters.get('min_size') is not None:
             filter_conditions.append(f"size:[{filters['min_size']} TO *]")
@@ -64,12 +48,10 @@ def search_datasets(query, filters=None, limit=10):
         if filters.get('species'):
             filter_conditions.append(f"species:(*{filters['species']}*)")
         if filters.get('tasks'):
-            # Filter for array field
             filter_conditions.append(f"tasks:{filters['tasks']}")
             
     filter_string = " AND ".join(filter_conditions) if filter_conditions else None
     
-    # Debug print
     if filter_string:
         st.sidebar.write("Active filters:", filter_string)
     
@@ -81,29 +63,58 @@ def search_datasets(query, filters=None, limit=10):
     return results["hits"]
 
 def format_array_field(value):
-    """Format array field for display"""
+    # Convert array to comma-separated string
     if isinstance(value, list):
         return ", ".join(value)
     return str(value)
 
 def format_dataset_url(dataset_id: str) -> str:
-    """Format OpenNeuro dataset URL from ID"""
+    # Format OpenNeuro dataset URL
     if dataset_id and dataset_id != "Not specified":
         return f"https://openneuro.org/datasets/{dataset_id}"
     return "#"
+
+def get_filter_options_from_results(results):
+    # Extract unique filter values from search results
+    modalities = set()
+    species = set()
+    tasks = set()
+    
+    for result in results:
+        if isinstance(result.get('modalities'), list):
+            for m in result['modalities']:
+                if m and m != "Not specified":
+                    modalities.add(m)
+                    
+        if result.get('species') and result['species'] != "Not specified":
+            species.add(result['species'])
+            
+        if isinstance(result.get('tasks'), list):
+            for t in result['tasks']:
+                if t and t != "Not specified":
+                    tasks.add(t)
+    
+    return {
+        'modalities': sorted(list(modalities)),
+        'species': sorted(list(species)),
+        'tasks': sorted(list(tasks))
+    }
+
+@st.cache_data(ttl=3600)
+def get_all_filter_options():
+    # Get all available filter options from the index
+    mq = marqo.Client(url='http://localhost:8882')
+    return {
+        'modalities': get_unique_field_values(mq, "openneuro_datasets", "modalities"),
+        'species': get_unique_field_values(mq, "openneuro_datasets", "species"),
+        'tasks': get_unique_field_values(mq, "openneuro_datasets", "tasks")
+    }
 
 def main():
     st.title("OpenNeuro Dataset Search")
     st.write("Search through neuroscience datasets from OpenNeuro using natural language")
     
-    # Load filter options
-    try:
-        filter_options = load_filter_options()
-    except Exception as e:
-        st.error(f"Error loading filter options: {e}")
-        filter_options = defaultdict(list)
-    
-    # Search and filter interface
+    # Search interface
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -112,6 +123,14 @@ def main():
     with col2:
         limit = st.number_input("Results limit", min_value=1, max_value=100, value=10)
     
+    # Get initial results without filters
+    initial_results = search_datasets("dataset", None, limit)
+    
+    # Get filter options - use all options if no results
+    if query == "":
+        filter_options = get_all_filter_options()
+    else:
+        filter_options = get_filter_options_from_results(initial_results)
     # Filters
     st.sidebar.header("Filters")
     
@@ -171,8 +190,9 @@ def main():
     if max_size > 0:  # Only add max size if it's greater than 0
         filters['max_size'] = max_size_bytes
     
-    if query:
-        results = search_datasets(query, filters, limit)
+    # Get filtered results
+    if query or filters:
+        results = search_datasets(query if query else "*", filters, limit)
         
         if not results:
             st.warning("No results found matching your criteria.")
