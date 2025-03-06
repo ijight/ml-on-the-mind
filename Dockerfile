@@ -28,4 +28,4 @@ RUN docker run --name marqo -it -p 8882:8882 marqoai/marqo:latest
 RUN pdm run python -m src.ml_on_the_mind.build_vector_db
 
 # Start Streamlit
-CMD ["pdm", "run", "streamlit", "run", "src/ml_on_the_mind/app.py"] 
+CMD ["streamlit", "run", "src/ml_on_the_mind/app.py"] 
