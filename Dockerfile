@@ -4,14 +4,8 @@ FROM python:3.9-slim
 # Install PDM
 RUN pip install pdm
 
-# Copy PDM files
-COPY pyproject.toml pdm.lock ./
-
-# Install dependencies using PDM
-RUN pdm install --no-lock --no-editable
-
-# Copy application files
-COPY . .
+# Install dependencies
+RUN pdm install
 
 # Download datasets and build vector DB
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
