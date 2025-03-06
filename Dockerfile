@@ -12,6 +12,8 @@ ENV PDM_USE_VENV=false
 ENV PDM_IGNORE_SAVED_PYTHON=1
 
 # Install dependencies
+RUN ls -la
+RUN pdm init
 RUN pdm install --no-self -v
 
 # Download datasets and build vector DB
