@@ -19,11 +19,13 @@ RUN pdm install --no-self
 
 # Download datasets and build vector DB
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
-    pdm run python -m src.ml_on_the_mind.download.dandi_downloader && \
-    pdm run python -m src.ml_on_the_mind.build_vector_db
+    pdm run python -m src.ml_on_the_mind.download.dandi_downloader
 
-# Expose Streamlit port
-EXPOSE 8501
+RUN docker rm -f marqo
+RUN docker pull marqoai/marqo:latest
+RUN docker run --name marqo -it -p 8882:8882 marqoai/marqo:latest
+
+RUN pdm run python -m src.ml_on_the_mind.build_vector_db
 
 # Start Streamlit
 CMD ["pdm", "run", "streamlit", "run", "src/ml_on_the_mind/app.py"] 
