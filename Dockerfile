@@ -11,10 +11,11 @@ WORKDIR /app
 ENV PDM_USE_VENV=false
 ENV PDM_IGNORE_SAVED_PYTHON=1
 
+# Copy project files
+COPY . .
+
 # Install dependencies
-RUN ls -la
-RUN pdm init
-RUN pdm install --no-self -v
+RUN pdm install --no-self
 
 # Download datasets and build vector DB
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
