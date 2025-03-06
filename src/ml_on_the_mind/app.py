@@ -14,7 +14,6 @@ def format_size(size_in_bytes):
     return f"{size_in_bytes:.1f} PB"
 
 def get_unique_field_values(mq, index_name, field, limit=1000):
-    # Get unique values for a given field from the index
     results = mq.index(index_name).search(
         "*",
         limit=limit,
@@ -65,19 +64,16 @@ def search_datasets(query, filters=None, limit=10):
     return results["hits"]
 
 def format_array_field(value):
-    # Convert array to comma-separated string
     if isinstance(value, list):
         return ", ".join(value)
     return str(value)
 
 def format_dataset_url(dataset_id: str) -> str:
-    # Format OpenNeuro dataset URL
     if dataset_id and dataset_id != "Not specified":
         return f"https://openneuro.org/datasets/{dataset_id}"
     return "#"
 
 def get_filter_options_from_results(results):
-    # Extract unique filter values from search results
     modalities = set()
     species = set()
     tasks = set()
@@ -104,7 +100,6 @@ def get_filter_options_from_results(results):
 
 @st.cache_data(ttl=3600)
 def get_all_filter_options():
-    # Get all available filter options from the index
     mq = marqo.Client(url='http://localhost:8882')
     return {
         'modalities': get_unique_field_values(mq, "openneuro_datasets", "modalities"),
@@ -118,7 +113,6 @@ def main():
     index_stats = mq.index("neuroscience_datasets").get_stats()
     st.markdown(f"Search a list of :blue[**{index_stats['numberOfDocuments']}**] neuroscience datasets from OpenNeuro, DANDI, and more using natural language.")
     
-    # Search interface
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -127,18 +121,15 @@ def main():
     with col2:
         limit = st.number_input("Results limit", min_value=1, max_value=100, value=10)
     
-    # Get initial results without filters
     initial_results = search_datasets("dataset", None, limit)
     
-    # Get filter options - use all options if no results
     if query == "":
         filter_options = get_all_filter_options()
     else:
         filter_options = get_filter_options_from_results(initial_results)
-    # Filters
+
     st.sidebar.header("Filters")
     
-    # Dropdown filters
     modality = st.sidebar.selectbox(
         "Modality",
         options=[""] + filter_options['modalities'],
@@ -157,7 +148,6 @@ def main():
         format_func=lambda x: "All Tasks" if x == "" else x
     )
     
-    # Size filter
     st.sidebar.subheader("Dataset Size")
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -165,23 +155,20 @@ def main():
             "Min Size (GB)", 
             min_value=0.0, 
             value=0.0,
-            step=1.0  # Increment by 1 GB
+            step=1.0
         )
     with col2:
         max_size = st.number_input(
             "Max Size (GB)", 
             min_value=0.0, 
-            value=0.0,  # Default to 0 (no limit)
-            step=1.0,  # Increment by 1 GB
+            value=0.0,
+            step=1.0,
             help="Set to 0 for no maximum limit"
         )
     
-    # Convert GB to bytes for filtering
     min_size_bytes = int(min_size * 1_000_000_000)
-    # Only use max_size if it's greater than 0
     max_size_bytes = int(max_size * 1_000_000_000) if max_size > 0 else None
     
-    # Build filters dict
     filters = {}
     if modality:
         filters['modality'] = modality
@@ -191,25 +178,21 @@ def main():
         filters['tasks'] = tasks
     if min_size > 0:
         filters['min_size'] = min_size_bytes
-    if max_size > 0:  # Only add max size if it's greater than 0
+    if max_size > 0:
         filters['max_size'] = max_size_bytes
     
-    # Get filtered results
     if query or filters:
         results = search_datasets(query if query else "*", filters, limit)
         
         if not results:
             st.warning("No results found matching your criteria.")
         
-        # Display results
         for result in results:
             with st.container():
-                # Format URL from dataset ID
                 dataset_url = format_dataset_url(result['id'])
                 st.markdown(f"### [{result['dataset_name']}]({dataset_url})")
                 st.markdown(f"**ID**: {result['id']}")
                 
-                # Display metadata
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.write("**Modalities:**", format_array_field(result['modalities']))
@@ -223,7 +206,6 @@ def main():
                     st.write("**Size:**", format_size(result['size']))
                     st.write("**Tasks:**", format_array_field(result['tasks']))
                 
-                # Show readme preview if available
                 if result.get('readme'):
                     with st.expander("Show README"):
                         preview = result['readme'][:500] + "..." if len(result['readme']) > 500 else result['readme']
@@ -235,4 +217,4 @@ def main():
                 st.markdown("---")
 
 if __name__ == "__main__":
-    main() 
+    main()

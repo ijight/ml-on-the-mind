@@ -13,30 +13,23 @@ class DandiDownloader(DatasetDownloader):
     
     def map_to_common_format(self, dandiset) -> DatasetMetadata:
         try:
-            # Get metadata from the dandiset object
             metadata = dandiset.get_raw_metadata()
-            
-            # Get summary info
             summary = metadata.get('assetsSummary', {})
             
-            # Extract species from summary
             species = []
             for species_info in summary.get('species', []):
                 if isinstance(species_info, dict) and species_info.get('name'):
                     species.append(species_info['name'])
             
-            # Extract modalities from variableMeasured in summary
             modalities = summary.get('variableMeasured', [])
             if not isinstance(modalities, list):
                 modalities = []
             
-            # Extract measurement techniques from summary
             tasks = []
             for technique in summary.get('measurementTechnique', []):
                 if isinstance(technique, dict) and technique.get('name'):
                     tasks.append(technique['name'])
             
-            # Get contributors (authors only)
             authors = []
             for contributor in metadata.get('contributor', []):
                 if (isinstance(contributor, dict) and 
@@ -44,7 +37,6 @@ class DandiDownloader(DatasetDownloader):
                     'dcite:Author' in contributor.get('roleName', [])):
                     authors.append(contributor['name'])
             
-            # Get version and construct full ID
             version = metadata.get('version', '')
             dandiset_id = metadata.get('identifier', '').replace('DANDI:', '')
             full_id = f"{dandiset_id}/{version}" if version else dandiset_id
@@ -76,13 +68,11 @@ class DandiDownloader(DatasetDownloader):
         datasets = []
         
         try:
-            # Get all dandisets with progress bar
             dandisets = list(self.client.get_dandisets())
             pbar = tqdm(dandisets, desc="Processing DANDI datasets")
             
             for dandiset in pbar:
                 try:
-                    # Map to common format
                     dataset = self.map_to_common_format(dandiset)
                     datasets.append(dataset)
                     pbar.set_postfix({'total': len(datasets)})
@@ -91,7 +81,6 @@ class DandiDownloader(DatasetDownloader):
                     print(f"Error processing dandiset {dandiset.identifier}: {e}")
                     continue
             
-            # Save datasets to JSON file
             self.save_datasets(datasets, self.output_file)
             
         except Exception as e:
@@ -102,4 +91,4 @@ class DandiDownloader(DatasetDownloader):
 if __name__ == "__main__":
     downloader = DandiDownloader()
     datasets = downloader.fetch_datasets()
-    print(f"Total DANDI datasets downloaded: {len(datasets)}") 
+    print(f"Total DANDI datasets downloaded: {len(datasets)}")

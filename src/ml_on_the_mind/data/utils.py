@@ -45,7 +45,6 @@ def load_datasets(data_dir: str = "cache") -> List[DatasetMetadata]:
     """Load and clean all dataset JSON files from data directory"""
     all_datasets = []
     
-    # Load all JSON files from data directory
     for filename in os.listdir(data_dir):
         if filename.endswith('_datasets.json'):
             filepath = os.path.join(data_dir, filename)
