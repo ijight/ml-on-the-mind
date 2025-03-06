@@ -4,11 +4,15 @@ FROM python:3.9-slim
 # Install PDM
 RUN pip install pdm
 
+# Set working directory
+WORKDIR /app
+
 # Set PDM environment variables
 ENV PDM_USE_VENV=false
 ENV PDM_IGNORE_SAVED_PYTHON=1
 
 # Install dependencies
+RUN pdm use .
 RUN pdm install --no-self -v
 
 # Download datasets and build vector DB
