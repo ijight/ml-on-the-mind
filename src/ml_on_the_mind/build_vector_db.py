@@ -27,7 +27,11 @@ def create_searchable_content(dataset: DatasetMetadata) -> str:
     """.strip()
 
 def create_marqo_index():
-    mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
+    try:
+        mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
+    except Exception as e:
+        logger.error(f"Failed to connect to Marqo at {os.getenv('MARQO_URL', 'http://localhost:8882')}: {str(e)}")
+        return
     
     index_name = "neuroscience_datasets"
     try:
