@@ -4,6 +4,7 @@ from collections import defaultdict
 import traceback
 from data.data_schema import DatasetMetadata
 from data.utils import load_datasets
+import os
 
 def format_size(size_in_bytes):
     # Convert bytes to human readable format (B, KB, MB, GB, TB, PB)
@@ -36,7 +37,7 @@ def get_unique_field_values(mq, index_name, field, limit=1000):
     return sorted(list(values))
 
 def search_datasets(query, filters=None, limit=10):
-    mq = marqo.Client(url='http://localhost:8882')
+    mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
     
     filter_conditions = []
     if filters:
@@ -100,7 +101,7 @@ def get_filter_options_from_results(results):
 
 @st.cache_data(ttl=3600)
 def get_all_filter_options():
-    mq = marqo.Client(url='http://localhost:8882')
+    mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
     return {
         'modalities': get_unique_field_values(mq, "openneuro_datasets", "modalities"),
         'species': get_unique_field_values(mq, "openneuro_datasets", "species"),
@@ -109,7 +110,7 @@ def get_all_filter_options():
 
 def main():
     st.title("Neuroscience Dataset Search")
-    mq = marqo.Client(url='http://localhost:8882')
+    mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
     index_stats = mq.index("neuroscience_datasets").get_stats()
     st.markdown(f"Search a list of :blue[**{index_stats['numberOfDocuments']}**] neuroscience datasets from OpenNeuro, DANDI, and more using natural language.")
     

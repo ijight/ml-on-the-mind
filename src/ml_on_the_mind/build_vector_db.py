@@ -4,7 +4,7 @@ import logging
 from tqdm import tqdm
 from .data.data_schema import DatasetMetadata
 from .data.utils import load_datasets
-
+import os
 logging.basicConfig(
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -27,7 +27,7 @@ def create_searchable_content(dataset: DatasetMetadata) -> str:
     """.strip()
 
 def create_marqo_index():
-    mq = marqo.Client(url='http://localhost:8882')
+    mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
     
     index_name = "neuroscience_datasets"
     try:

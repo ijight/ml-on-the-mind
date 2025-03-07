@@ -4,18 +4,21 @@ services:
     image: marqoai/marqo:latest
     ports:
       - "8882:8882"
-
+    # Optional: You could add a volume here to persist Marqo data if needed.
+    volumes:
+      - marqo_data:/app/marqo_data
 
   streamlit:
     build: .
     ports:
       - "8501:8501"
     environment:
-      - MARQO_URL=http://marqo:8882
+      - MARQO_URL=http://marqo:8882  # Connect to Marqo container
     volumes:
-      - dataset_data:cache
+      - dataset_data:/app/cache  # Cache data for Streamlit
     depends_on:
       - marqo
 
 volumes:
-  dataset_data:
+  marqo_data:  # Volume for Marqo persistence (optional)
+  dataset_data:  # Cache volume for Streamlit data
