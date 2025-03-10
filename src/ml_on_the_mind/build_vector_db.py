@@ -27,22 +27,41 @@ def create_searchable_content(dataset: DatasetMetadata) -> str:
     """.strip()
 
 def create_marqo_index():
+    connection_url = os.getenv("MARQO_URL", "http://localhost:8882")
     try:
-        mq = marqo.Client(url=os.getenv("MARQO_URL", "http://localhost:8882"))
+        print(f"Connecting to Marqo at {connection_url}")
+        mq = marqo.Client(url=connection_url)
+        # Test the connection
+        mq.get_indexes()
     except Exception as e:
-        print(f"Failed to connect to Marqo at {os.getenv('MARQO_URL', 'http://localhost:8882')}: {str(e)}")
-        return
-    
+        logger.error(f"Failed to connect to Marqo at {connection_url}: {str(e)}")
+        raise
+
+    print(f"Connected to Marqo at {connection_url}")
+
     index_name = "neuroscience_datasets"
     try:
         mq.index(index_name).delete()
-    except Exception:
-        pass
+        print(f"Deleted existing index {index_name}")
+    except Exception as e:
+        logger.warning(f"Could not delete index {index_name}: {str(e)}")
     
-    mq.create_index(index_name, model="hf/e5-base-v2")
-    
+    try:
+        print(f"Creating index {index_name}")
+        settings = {
+            "treat_urls_and_pointers_as_images": False,
+            "model": "hf/e5-base-v2"
+        }
+        mq.create_index(index_name, settings_dict=settings)
+        print(f"Created index {index_name}")
+    except Exception as e:
+        logger.error(f"Failed to create index: {str(e)}")
+        raise
+
     datasets = load_datasets()
     
+    print(f"Loaded {len(datasets)} datasets")
+
     documents = []
     for dataset in datasets:
         try:
@@ -54,6 +73,8 @@ def create_marqo_index():
         except Exception as e:
             logger.error(f"Failed to process dataset {dataset.get('id', 'unknown')}: {str(e)}")
     
+    print(f"Indexing {len(documents)} documents")
+
     batch_size = 100
     for i in tqdm(range(0, len(documents), batch_size), desc="Indexing documents"):
         batch = documents[i:i+batch_size]
