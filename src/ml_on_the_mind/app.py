@@ -58,7 +58,7 @@ def search_datasets(query, filters=None, limit=10):
     if filter_string:
         st.sidebar.write("Active filters:", filter_string)
     
-    results = mq.index("openneuro_datasets").search(
+    results = mq.index("neuroscience_datasets").search(
         query if query else "*",
         limit=limit,
         filter_string=filter_string
@@ -105,9 +105,9 @@ def get_all_filter_options():
     connection_url = "https://74ab-75-50-53-185.ngrok-free.app" # TODO: Make this dynamic
     mq = marqo.Client(url=connection_url)
     return {
-        'modalities': get_unique_field_values(mq, "openneuro_datasets", "modalities"),
-        'species': get_unique_field_values(mq, "openneuro_datasets", "species"),
-        'tasks': get_unique_field_values(mq, "openneuro_datasets", "tasks")
+        'modalities': get_unique_field_values(mq, "neuroscience_datasets", "modalities"),
+        'species': get_unique_field_values(mq, "neuroscience_datasets", "species"),
+        'tasks': get_unique_field_values(mq, "neuroscience_datasets", "tasks")
     }
 
 def main():
