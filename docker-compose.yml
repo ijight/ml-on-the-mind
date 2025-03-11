@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  marqo:
+    image: marqoai/marqo:latest
+    container_name: marqo
+    ports:
+      - "8882:8882"
+    volumes:
+      - marqo_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8882/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    depends_on:
+      - marqo
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http marqo:8882 --log=stdout
+    ports:
+      - "4040:4040"
+
+volumes:
+  marqo_data: 

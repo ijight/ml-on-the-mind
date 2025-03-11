@@ -21,12 +21,6 @@ RUN pdm install --no-self
 RUN pdm run python -m src.ml_on_the_mind.download.openneuro_downloader && \
     pdm run python -m src.ml_on_the_mind.download.dandi_downloader
 
-# Start Marqo
-RUN docker pull marqoai/marqo:latest
-RUN docker run --name marqo -d -p 8882:8882 marqoai/marqo:latest
-
-
-
 RUN pdm run python -m src.ml_on_the_mind.build_vector_db
 
 # Start Streamlit
