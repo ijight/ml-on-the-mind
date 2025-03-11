@@ -2,7 +2,8 @@ from typing import List, TypedDict, Optional, Union
 from datetime import datetime
 
 class DatasetMetadata(TypedDict):
-    """Unified schema for a searchable dataset.
+    """Unified schema for a searchable dataset. 
+    I'm not actually using this right now, but it's here for reference.
 
         Args:
             id: str                     # Unique identifier
