@@ -21,7 +21,7 @@ def create_searchable_content(dataset: DatasetMetadata) -> str:
     """.strip()
 
 def create_marqo_index():
-    connection_url = os.getenv("MARQO_URL")
+    connection_url = "https://74ab-75-50-53-185.ngrok-free.app" # Railway variables are broken worthless peices of shit
     try:
         print(f"Connecting to Marqo at {connection_url}")
         mq = marqo.Client(url=connection_url)
