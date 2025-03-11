@@ -49,7 +49,7 @@ def search_datasets(query, filters=None, limit=10):
         if filters.get('max_size') is not None:
             filter_conditions.append(f"size:[* TO {filters['max_size']}]")
         if filters.get('species'):
-            filter_conditions.append(f"species:(*{filters['species']}*)")
+            filter_conditions.append(f"species:{filters['species']}")
         if filters.get('tasks'):
             filter_conditions.append(f"tasks:{filters['tasks']}")
             
@@ -70,10 +70,13 @@ def format_array_field(value):
         return ", ".join(value)
     return str(value)
 
-def format_dataset_url(dataset_id: str) -> str:
-    if dataset_id and dataset_id != "Not specified":
+def format_dataset_url(dataset_id: str, source: str) -> str:
+    if source == "openneuro":
         return f"https://openneuro.org/datasets/{dataset_id}"
-    return "#"
+    elif source == "dandi":
+        return f"https://dandiarchive.org/dandiset/{dataset_id}"
+    else:
+        return "#"
 
 def get_filter_options_from_results(results):
     modalities = set()
@@ -86,8 +89,14 @@ def get_filter_options_from_results(results):
                 if m and m != "Not specified":
                     modalities.add(m)
                     
-        if result.get('species') and result['species'] != "Not specified":
-            species.add(result['species'])
+        # Handle species as either a string or a list
+        if result.get('species'):
+            if isinstance(result.get('species'), list):
+                for s in result['species']:
+                    if s and s != "Not specified":
+                        species.add(s)
+            elif result['species'] != "Not specified":
+                species.add(result['species'])
             
         if isinstance(result.get('tasks'), list):
             for t in result['tasks']:
@@ -158,8 +167,9 @@ def main():
         min_size = st.number_input(
             "Min Size (GB)", 
             min_value=0.0, 
-            value=0.0,
-            step=1.0
+            value=0.000000001,  # Default to 1 byte (in GB)
+            step=1.0,
+            format="%.9f"
         )
     with col2:
         max_size = st.number_input(
@@ -170,7 +180,8 @@ def main():
             help="Set to 0 for no maximum limit"
         )
     
-    min_size_bytes = int(min_size * 1_000_000_000)
+    # Convert to bytes, but ensure at least 1 byte by default
+    min_size_bytes = max(int(min_size * 1_000_000_000), 1)
     max_size_bytes = int(max_size * 1_000_000_000) if max_size > 0 else None
     
     filters = {}
@@ -193,31 +204,35 @@ def main():
         
         for result in results:
             with st.container():
-                dataset_url = format_dataset_url(result['id'])
-                st.markdown(f"### [{result['dataset_name']}]({dataset_url})")
+                dataset_url = format_dataset_url(result['id'], result['source'])
+                st.markdown(f"### [{result['name']}]({dataset_url})")
                 st.markdown(f"**ID**: {result['id']}")
                 
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.write("**Modalities:**", format_array_field(result['modalities']))
                     if result.get('species'):
-                        st.write("**Species:**", result['species'])
+                        st.write("**Species:**", format_array_field(result['species']))
                 with col2:
                     if result.get('doi'):
                         st.write("**DOI:**", result['doi'])
-                    st.write("**Published:**", result['publish_date'])
+                    st.write("**Published:**", result['date_created'])
+                    if result.get('data_standard'):
+                        st.write("**Standard:**", result['data_standard'])
                 with col3:
                     st.write("**Size:**", format_size(result['size']))
                     st.write("**Tasks:**", format_array_field(result['tasks']))
+                    if result.get('subject_count'):
+                        st.write("**Subjects:**", result['subject_count'])
                 
-                if result.get('readme'):
-                    with st.expander("Show README"):
-                        preview = result['readme'][:500] + "..." if len(result['readme']) > 500 else result['readme']
+                if result.get('description'):
+                    with st.expander("Show Description"):
+                        preview = result['description'][:500] + "..." if len(result['description']) > 500 else result['description']
                         readme_container = st.empty()
                         readme_container.text(preview)
-                        if len(result['readme']) > 500:
-                            if st.button("Show Full README", key=f"readme_{result['id']}"):
-                                readme_container.text(result['readme'])
+                        if len(result['description']) > 500:
+                            if st.button("Show Full Description", key=f"desc_{result['id']}"):
+                                readme_container.text(result['description'])
                 st.markdown("---")
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ python -m src.ml_on_the_mind.build_vector_db
 To run the app, run:
 
 ```
-streamlit run src/ml_on_the_mind/app.py
+pdm run streamlit run src/ml_on_the_mind/app.py
 ```
 
 
