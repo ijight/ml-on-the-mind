@@ -19,7 +19,7 @@ Large scale neural data is becoming increasingly available, but it can be diffic
 - streamlit
 - Docker (for running Marqo)
 
-## Initial For Deployment
+## Initialize For Deployment
 You need to have Marqo running so that the app can connect to it.
 - https://github.com/marqo-ai/marqo-on-kubernetes
 - or use ngrok to expose your local server to the public internet for testing, I've included a docker-compose.yml file to start both Marqo and ngrok.
@@ -30,7 +30,7 @@ docker compose up
 
 The, you can deploy the frontend to Railway. Set the MARQO_URL environment variable to the public URL of your Marqo instance.
 
-## Initial For Local Development
+## Initialize For Local Development
 This project uses PDM to manage dependencies. To install the dependencies, run:
 
 ```
