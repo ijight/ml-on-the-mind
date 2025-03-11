@@ -21,7 +21,7 @@ def create_searchable_content(dataset: DatasetMetadata) -> str:
     """.strip()
 
 def create_marqo_index():
-    connection_url = os.getenv("MARQO_URL", "http://localhost:8882")
+    connection_url = os.getenv("MARQO_URL")
     try:
         print(f"Connecting to Marqo at {connection_url}")
         mq = marqo.Client(url=connection_url)
