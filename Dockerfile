@@ -27,4 +27,4 @@ RUN pdm install --no-self
 # RUN pdm run python -m src.ml_on_the_mind.build_vector_db
 
 # Start Streamlit
-CMD ["streamlit", "run", "src/ml_on_the_mind/app.py"] 
+CMD ["pdm", "run", "streamlit", "run", "src/ml_on_the_mind/app.py"] 
